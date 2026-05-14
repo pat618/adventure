@@ -11,46 +11,28 @@ public class AdventureGame
     public readonly string OPEN_CHEST = "O";
     public readonly string QUIT = "Q";
 
-    // ── state ─────────────────────────────────────────────────────────
     private Adventurer adventurer = null!;
     private Room?[,] dungeon = null!;
-    private int aRow, aCol;           // adventurer position
-    private int gRow, gCol;           // grue position
+    private int aRow, aCol;
+    private int gRow, gCol;
     private int exitRow, exitCol;
     private bool isChestOpen;
     private bool hasPlayerQuit;
     private bool isAdventureAlive;
     private bool hasReachedExit;
-    private bool isGruePursuing;      // true after chest opened → grue chases
+    private bool isGruePursuing;
     private string lastMessage = string.Empty;
     private Random rng = new Random();
 
-    //  5×5 grid layout:
-    //
-    //  Col:  0      1      2      3      4
-    //  Row0: R      h      R      #      #
-    //  Row1: v      #      v      #      #
-    //  Row2: R      h      R      h      R
-    //  Row3: #      #      v      #      v
-    //  Row4: #      #      R      h      R
-    //
-    //  Rooms (even,even): [0,0]=EXIT  [0,2]=KEY  [2,0]=LAMP+START
-    //                     [2,2]=empty [2,4]=empty [4,2]=CHEST [4,4]=empty
-    //  Corridors: h=horizontal(even,odd)  v=vertical(odd,even)  #=wall(null)
-    //
-    //  GRUE wanders always. Without lamp the player CANNOT see it.
-    //  Sharing any cell with the Grue = instant death.
-    //  Picking up the lamp teleports the Grue to a random cell != player.
+
 
     private const int ROOM_W = 23;
     private const int ROOM_H = 9;
     private const int COR_W = 7;
     private const int VCOR_H = 3;
 
-    // ── all walkable cells (built once after dungeon is ready) ─────────
     private (int r, int c)[] allCells = Array.Empty<(int, int)>();
 
-    // ───────────────────────────────────────────────────────────────────
     public void Start()
     {
         Init();
@@ -80,15 +62,18 @@ public class AdventureGame
     private void Init()
     {
         adventurer = new Adventurer();
-        adventurer.SetLamp(false);   // must pick up!
+        adventurer.SetLamp(false);
 
         string[] layout =
         {
-            "R.R##",
-            "v#v##",
-            "R.R.R",
-            "##v#v",
-            "##R.R",
+            "R.R.R.R#",
+            "v###v#v#",
+            "R.R#R#R#",
+            "v#v###v#",
+            "R#R.R.R#",
+            "##v#v###",
+            "##R.R###",
+            "########",
         };
 
         int gridRows = layout.Length;
@@ -114,30 +99,31 @@ public class AdventureGame
                 cell.SetDescription(isRoom ? "room" : "passage");
             }
 
-        // Room labels & items
         dungeon[0, 0]!.SetExit(true);
         dungeon[0, 0]!.SetDescription("Room 1  [EXIT]");
         dungeon[0, 2]!.SetKey(true);
         dungeon[0, 2]!.SetDescription("Room 2  [KEY]");
+        dungeon[0, 4]!.SetDescription("Room 3");
+        dungeon[0, 6]!.SetDescription("Room 4");
         dungeon[2, 0]!.SetLamp(true);
-        dungeon[2, 0]!.SetDescription("Room 3  [LAMP]");
-        dungeon[2, 2]!.SetDescription("Room 4");
-        dungeon[2, 4]!.SetDescription("Room 5");
-        dungeon[4, 2]!.SetChest(true);
-        dungeon[4, 2]!.SetDescription("Room 6  [CHEST]");
-        dungeon[4, 4]!.SetDescription("Room 7");
+        dungeon[2, 0]!.SetDescription("Room 5  [LAMP]");
+        dungeon[2, 2]!.SetDescription("Room 6");
+        dungeon[2, 4]!.SetDescription("Room 7");
+        dungeon[2, 6]!.SetDescription("Room 8");
+        dungeon[4, 0]!.SetDescription("Room 9");
+        dungeon[4, 2]!.SetDescription("Room 10");
+        dungeon[4, 4]!.SetDescription("Room 11");
+        dungeon[4, 6]!.SetDescription("Room 12");
+        dungeon[6, 2]!.SetChest(true);
+        dungeon[6, 2]!.SetDescription("Room 13 [CHEST]");
+        dungeon[6, 4]!.SetDescription("Room 14");
 
-        // Build list of all walkable cells
         allCells = AllWalkable();
 
-        // Adventurer starts in Room 3
         aRow = 2; aCol = 0;
-
-        // Grue starts at a random cell that is NOT the player's start room
         (gRow, gCol) = RandomCellExcluding(aRow, aCol);
 
         exitRow = 0; exitCol = 0;
-
         isChestOpen = false;
         hasPlayerQuit = false;
         isAdventureAlive = true;
@@ -167,10 +153,6 @@ public class AdventureGame
         return candidates[rng.Next(candidates.Length)];
     }
 
-    // ───────────────────────────────────────────────────────────────────
-    //  RENDER
-    // ───────────────────────────────────────────────────────────────────
-
     private void Redraw()
     {
         Console.Clear();
@@ -183,9 +165,9 @@ public class AdventureGame
         int gridRows = dungeon.GetLength(0);
         int gridCols = dungeon.GetLength(1);
 
-        Console.WriteLine("  ╔══════════════════════════════════════════════════════════╗");
-        Console.WriteLine("  ║              D U N G E O N   M A P                      ║");
-        Console.WriteLine("  ╚══════════════════════════════════════════════════════════╝");
+        Console.WriteLine("  \u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557");
+        Console.WriteLine("  \u2551              D U N G E O N   M A P                      \u2551");
+        Console.WriteLine("  \u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d");
         Console.WriteLine();
 
         for (int row = 0; row < gridRows; row++)
@@ -224,7 +206,7 @@ public class AdventureGame
     {
         int w = isRoomCol ? (ROOM_W + 2) : (COR_W + 2);
         for (int i = 0; i < lines.Length; i++)
-            lines[i] += new string('▓', w);
+            lines[i] += new string('\u2593', w);
     }
 
     private void BuildRoom(string[] lines, Room r, int row, int col)
@@ -232,28 +214,22 @@ public class AdventureGame
         int iw = ROOM_W;
         bool hasLamp = adventurer.HasLamp();
 
-        // top border
-        if (r.HasNorth()) { int s = (iw - 5) / 2; lines[0] += "+" + new string('─', s) + "[ N ]" + new string('─', iw - s - 5) + "+"; }
-        else lines[0] += "+" + new string('─', iw) + "+";
+        if (r.HasNorth()) { int s = (iw - 5) / 2; lines[0] += "+" + new string('\u2500', s) + "[ N ]" + new string('\u2500', iw - s - 5) + "+"; }
+        else lines[0] += "+" + new string('\u2500', iw) + "+";
 
-        // room name
-        lines[1] += "│" + PadCenter(r.GetDescription(), iw) + "│";
+        lines[1] += "\u2502" + PadCenter(r.GetDescription(), iw) + "\u2502";
+        lines[2] += "\u2502" + PadCenter(BuildItemStr(r), iw) + "\u2502";
 
-        // items
-        lines[2] += "│" + PadCenter(BuildItemStr(r), iw) + "│";
-
-        // characters (E/W doors on line 3)
         string chars = BuildChars(row, col, hasLamp);
-        string wBrd = r.HasWest() ? "  " : "│ ";
-        string eBrd = r.HasEast() ? "  " : " │";
+        string wBrd = r.HasWest() ? "  " : "\u2502 ";
+        string eBrd = r.HasEast() ? "  " : " \u2502";
         lines[3] += wBrd + PadCenter(chars, iw - wBrd.Length - eBrd.Length) + eBrd;
 
         for (int i = 4; i <= 7; i++)
-            lines[i] += "│" + new string(' ', iw) + "│";
+            lines[i] += "\u2502" + new string(' ', iw) + "\u2502";
 
-        // bottom border
-        if (r.HasSouth()) { int s = (iw - 5) / 2; lines[8] += "+" + new string('─', s) + "[ S ]" + new string('─', iw - s - 5) + "+"; }
-        else lines[8] += "+" + new string('─', iw) + "+";
+        if (r.HasSouth()) { int s = (iw - 5) / 2; lines[8] += "+" + new string('\u2500', s) + "[ S ]" + new string('\u2500', iw - s - 5) + "+"; }
+        else lines[8] += "+" + new string('\u2500', iw) + "+";
     }
 
     private void BuildHCorridor(string[] lines, int row, int col)
@@ -261,12 +237,12 @@ public class AdventureGame
         int iw = COR_W;
         bool hasLamp = adventurer.HasLamp();
         string mid = BuildChars(row, col, hasLamp);
-        if (mid == string.Empty) mid = hasLamp ? "───────" : " ? ";
+        if (mid == string.Empty) mid = hasLamp ? "\u2500\u2500\u2500\u2500\u2500\u2500\u2500" : " ? ";
 
-        lines[0] += new string('─', iw + 2);
+        lines[0] += new string('\u2500', iw + 2);
         for (int i = 1; i < ROOM_H - 1; i++)
             lines[i] += " " + PadCenter(i == ROOM_H / 2 ? mid : string.Empty, iw) + " ";
-        lines[ROOM_H - 1] += new string('─', iw + 2);
+        lines[ROOM_H - 1] += new string('\u2500', iw + 2);
     }
 
     private void BuildVCorridor(string[] lines, int row, int col)
@@ -276,18 +252,15 @@ public class AdventureGame
         string chars = BuildChars(row, col, hasLamp);
         if (chars == string.Empty && !hasLamp) chars = "?";
 
-        lines[0] += "│" + new string(' ', iw) + "│";
-        lines[1] += "│" + PadCenter(chars, iw) + "│";
-        lines[2] += "│" + new string(' ', iw) + "│";
+        lines[0] += "\u2502" + new string(' ', iw) + "\u2502";
+        lines[1] += "\u2502" + PadCenter(chars, iw) + "\u2502";
+        lines[2] += "\u2502" + new string(' ', iw) + "\u2502";
     }
 
-    // Builds the character string for a cell.
-    // Grue is only shown if player has the lamp OR is in the same cell.
     private string BuildChars(int row, int col, bool hasLamp)
     {
         bool hasAdv = (row == aRow && col == aCol);
         bool grueIsHere = (row == gRow && col == gCol);
-        // Can see grue only with lamp, or if it's in the same cell (then you die anyway)
         bool grueVisible = grueIsHere && (hasLamp || hasAdv);
 
         if (hasAdv && grueVisible) return "( @ ) <<GRUE>>";
@@ -308,11 +281,11 @@ public class AdventureGame
 
     private void ShowLegend()
     {
-        Console.WriteLine("  ┌──────────────────────────────────────────────────────────────────┐");
-        Console.WriteLine("  │ ( @ )=You  <<GRUE>>=Grue (lamp needed to see it!)               │");
-        Console.WriteLine("  │ [Lamp]=Lamp  [Key]=Key  [Chest]=Chest  <<EXIT>>=Exit            │");
-        Console.WriteLine("  │ [ N ]/[ S ]=door  open side=E/W door  ?=dark (Grue may lurk!)  │");
-        Console.WriteLine("  └──────────────────────────────────────────────────────────────────┘");
+        Console.WriteLine("  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510");
+        Console.WriteLine("  \u2502 ( @ )=You  <<GRUE>>=Grue (lamp needed to see it!)               \u2502");
+        Console.WriteLine("  \u2502 [Lamp]=Lamp  [Key]=Key  [Chest]=Chest  <<EXIT>>=Exit            \u2502");
+        Console.WriteLine("  \u2502 [ N ]/[ S ]=door  open side=E/W door  ?=dark (Grue may lurk!)  \u2502");
+        Console.WriteLine("  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518");
     }
 
     private static string PadCenter(string s, int width)
@@ -323,31 +296,27 @@ public class AdventureGame
         return new string(' ', pad / 2) + s + new string(' ', pad - pad / 2);
     }
 
-    // ───────────────────────────────────────────────────────────────────
-    //  HUD / INPUT
-    // ───────────────────────────────────────────────────────────────────
-
     private void ShowGameStartScreen()
     {
         Console.Clear();
         Console.WriteLine();
-        Console.WriteLine("  ╔════════════════════════════════════════════════════════╗");
-        Console.WriteLine("  ║           A D V E N T U R E   G A M E                 ║");
-        Console.WriteLine("  ╠════════════════════════════════════════════════════════╣");
-        Console.WriteLine("  ║  You wake up in Room 3. A lamp glows on the floor.    ║");
-        Console.WriteLine("  ║                                                        ║");
-        Console.WriteLine("  ║  WARNING: The Grue is already loose in the dungeon!   ║");
-        Console.WriteLine("  ║   Without the lamp you CANNOT see it coming.          ║");
-        Console.WriteLine("  ║   If it enters your room — you die.                   ║");
-        Console.WriteLine("  ║                                                        ║");
-        Console.WriteLine("  ║  Goals:                                                ║");
-        Console.WriteLine("  ║    1. Pick up LAMP  [L]  (Room 3, where you start).   ║");
-        Console.WriteLine("  ║    2. Find the KEY  [K]  (Room 2, top-right).         ║");
-        Console.WriteLine("  ║    3. Open the CHEST [O] (Room 6, bottom-centre).     ║");
-        Console.WriteLine("  ║    4. Reach the EXIT     (Room 1, top-left).          ║");
-        Console.WriteLine("  ║                                                        ║");
-        Console.WriteLine("  ║  Opening the chest makes the Grue actively chase you! ║");
-        Console.WriteLine("  ╚════════════════════════════════════════════════════════╝");
+        Console.WriteLine("  \u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557");
+        Console.WriteLine("  \u2551           A D V E N T U R E   G A M E                 \u2551");
+        Console.WriteLine("  \u2560\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2563");
+        Console.WriteLine("  \u2551  You wake up in Room 5. A lamp glows on the floor.    \u2551");
+        Console.WriteLine("  \u2551                                                        \u2551");
+        Console.WriteLine("  \u2551  WARNING: The Grue is already loose in the dungeon!   \u2551");
+        Console.WriteLine("  \u2551   Without the lamp you CANNOT see it coming.          \u2551");
+        Console.WriteLine("  \u2551   If it enters your room \u2014 you die.                   \u2551");
+        Console.WriteLine("  \u2551                                                        \u2551");
+        Console.WriteLine("  \u2551  Goals:                                                \u2551");
+        Console.WriteLine("  \u2551    1. Pick up LAMP  [L]  (Room 5, where you start).   \u2551");
+        Console.WriteLine("  \u2551    2. Find the KEY  [K]  (Room 2, top area).          \u2551");
+        Console.WriteLine("  \u2551    3. Open the CHEST [O] (Room 13, bottom centre).    \u2551");
+        Console.WriteLine("  \u2551    4. Reach the EXIT     (Room 1, top-left).          \u2551");
+        Console.WriteLine("  \u2551                                                        \u2551");
+        Console.WriteLine("  \u2551  Opening the chest makes the Grue actively chase you! \u2551");
+        Console.WriteLine("  \u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d");
         Console.WriteLine();
         Console.Write("  Press ENTER to start...");
         Console.ReadLine();
@@ -356,7 +325,7 @@ public class AdventureGame
     private void ShowScene()
     {
         Room? r = dungeon[aRow, aCol];
-        Console.WriteLine("  ══════════════════════════════════════════════════════");
+        Console.WriteLine("  \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550");
         Console.WriteLine($"  Location : {r?.GetDescription() ?? "?"}");
 
         if (!adventurer.HasLamp())
@@ -364,7 +333,7 @@ public class AdventureGame
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write("  Inventory: [NO LAMP]");
             Console.ResetColor();
-            Console.WriteLine("  ← pick it up [L] — the Grue is out there!");
+            Console.WriteLine("  \u2190 pick it up [L] \u2014 the Grue is out there!");
         }
         else
         {
@@ -386,7 +355,7 @@ public class AdventureGame
         if (isGruePursuing)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("  !! THE GRUE IS HUNTING YOU — REACH THE EXIT !!");
+            Console.WriteLine("  !! THE GRUE IS HUNTING YOU \u2014 REACH THE EXIT !!");
             Console.ResetColor();
         }
         else if (!adventurer.HasLamp())
@@ -396,7 +365,7 @@ public class AdventureGame
             Console.ResetColor();
         }
 
-        Console.WriteLine("  ══════════════════════════════════════════════════════");
+        Console.WriteLine("  \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550");
     }
 
     private void ShowInputOptions()
@@ -415,10 +384,6 @@ public class AdventureGame
         }
         return true;
     }
-
-    // ───────────────────────────────────────────────────────────────────
-    //  GAME LOGIC
-    // ───────────────────────────────────────────────────────────────────
 
     private void ProcessInput(string input)
     {
@@ -448,7 +413,6 @@ public class AdventureGame
         }
 
         aRow += dr; aCol += dc;
-        // Sharing a cell with the Grue = death (even without lamp)
         CheckGrueEncounter();
     }
 
@@ -459,7 +423,6 @@ public class AdventureGame
         {
             adventurer.SetLamp(true);
             r!.SetLamp(false);
-            // Teleport Grue to a random cell away from the player
             (gRow, gCol) = RandomCellExcluding(aRow, aCol);
             lastMessage = "You grab the LAMP! Somewhere in the dark, the Grue snarls...";
         }
@@ -487,7 +450,7 @@ public class AdventureGame
             {
                 isChestOpen = true;
                 isGruePursuing = true;
-                lastMessage = "You seize the TREASURE! The Grue roars — RUN to the exit!";
+                lastMessage = "You seize the TREASURE! The Grue roars \u2014 RUN to the exit!";
             }
             else lastMessage = "The chest is locked. Find the KEY first.";
         }
@@ -500,7 +463,6 @@ public class AdventureGame
     {
         if (!isAdventureAlive || hasPlayerQuit || hasReachedExit) return;
 
-        // Grue always moves every turn (wanders or pursues)
         if (isGruePursuing)
             MoveGrueBFS();
         else
@@ -513,7 +475,6 @@ public class AdventureGame
             hasReachedExit = true;
     }
 
-    // Grue wanders: picks a random neighbouring cell
     private void MoveGrueRandom()
     {
         var neighbours = new System.Collections.Generic.List<(int r, int c)>();
@@ -542,7 +503,6 @@ public class AdventureGame
         }
     }
 
-    // BFS: Grue moves one step toward the player
     private void MoveGrueBFS()
     {
         int rows = dungeon.GetLength(0);
@@ -603,19 +563,19 @@ public class AdventureGame
         if (hasReachedExit)
         {
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("  ╔══════════════════════════════════════════════════╗");
-            Console.WriteLine("  ║   YOU ESCAPED THE DUNGEON WITH THE TREASURE!    ║");
-            Console.WriteLine("  ║                 *** YOU WIN ***                 ║");
-            Console.WriteLine("  ╚══════════════════════════════════════════════════╝");
+            Console.WriteLine("  \u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557");
+            Console.WriteLine("  \u2551   YOU ESCAPED THE DUNGEON WITH THE TREASURE!    \u2551");
+            Console.WriteLine("  \u2551                 *** YOU WIN ***                 \u2551");
+            Console.WriteLine("  \u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255d");
             Console.ResetColor();
         }
         else if (!isAdventureAlive)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("  ╔══════════════════════════════════════════════════╗");
-            Console.WriteLine("  ║      The dungeon claims another soul...         ║");
-            Console.WriteLine("  ║              *** GAME  OVER ***                 ║");
-            Console.WriteLine("  ╚══════════════════════════════════════════════════╝");
+            Console.WriteLine("  \u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557");
+            Console.WriteLine("  \u2551      The dungeon claims another soul...         \u2551");
+            Console.WriteLine("  \u2551              *** GAME  OVER ***                 \u2551");
+            Console.WriteLine("  \u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557");
             Console.ResetColor();
         }
         else Console.WriteLine("  You slipped away quietly. Goodbye.");
